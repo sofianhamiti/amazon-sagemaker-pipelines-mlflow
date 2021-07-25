@@ -1,0 +1,48 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      # install dependencies
+      - pip install --upgrade --force-reinstall mlflow==1.18.0 sagemaker==2.45.0
+
+  pre_build:
+    commands:
+      - TRACKING_URI="<ADD YOUR MLFLOW LOAD BALANCER URI HERE>"
+      - MODEL_NAME="sklearn-random-forest"
+      - MODEL_VERSION="1"
+      - CONTAINER_URI="<ADD YOUR MLFLOW INFERENCE CONTAINER IMAGE URI HERE>"
+      - INITIAL_INSTANCE_COUNT="1"
+      - INSTANCE_TYPE="ml.m5.xlarge"
+
+  build:
+    commands:
+      # Export the staging and production configuration files
+      - |
+        python build.py \
+        --model-execution-role ${MODEL_EXECUTION_ROLE_ARN} \
+        --sagemaker-project-id ${SAGEMAKER_PROJECT_ID} \
+        --sagemaker-project-name ${SAGEMAKER_PROJECT_NAME} \
+        --tracking-uri ${TRACKING_URI} \
+        --model-name ${MODEL_NAME} \
+        --model-version ${MODEL_VERSION} \
+        --container-image-uri ${CONTAINER_URI} \
+        --initial-instance-count ${INITIAL_INSTANCE_COUNT} \
+        --instance-type ${INSTANCE_TYPE}
+
+      # Package the infrastructure as code defined in endpoint-config-template.yml by using AWS CloudFormation.
+      # Note that the Environment Variables like ARTIFACT_BUCKET, SAGEMAKER_PROJECT_NAME etc,. used below are expected to be setup by the
+      # CodeBuild resrouce in the infra pipeline (in the ServiceCatalog product)
+      - aws cloudformation package --template endpoint-config-template.yml --s3-bucket $ARTIFACT_BUCKET --output-template $EXPORT_TEMPLATE_NAME
+
+      # Print the files to verify contents
+      - cat $EXPORT_TEMPLATE_STAGING_CONFIG
+      - cat $EXPORT_TEMPLATE_PROD_CONFIG
+
+artifacts:
+  files:
+    - $EXPORT_TEMPLATE_NAME
+    - $EXPORT_TEMPLATE_STAGING_CONFIG
+    - $EXPORT_TEMPLATE_PROD_CONFIG

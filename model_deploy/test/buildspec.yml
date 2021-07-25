@@ -1,0 +1,20 @@
+version: 0.2
+
+phases:
+  install:
+    runtime-versions:
+      python: 3.8
+    commands:
+      # install MLflow dependency
+      - pip install --upgrade --force-reinstall mlflow==1.18.0 sagemaker==2.45.0
+
+  build:
+    commands:
+      # Call the test python code
+      - python -m test.test --import-build-config $CODEBUILD_SRC_DIR_BuildArtifact/staging-config-export.json --export-test-results $EXPORT_TEST_RESULTS
+      # Show the test results file
+      - cat $EXPORT_TEST_RESULTS
+
+artifacts:
+  files:
+    - $EXPORT_TEST_RESULTS
