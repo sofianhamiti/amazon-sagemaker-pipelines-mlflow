@@ -11,6 +11,6 @@ setup(
     author_email='hamitis@amazon.com',
     packages=find_packages(exclude=('tests', 'docs')),
     install_requires=[
-        'mlflow==1.18.0',
+        'mlflow==1.23.1',
     ],
 )
